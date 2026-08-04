@@ -1,8 +1,8 @@
-import pytest
-from unittest.mock import MagicMock, patch
-from core.schema import CampaignBrief, ContentClassification, GradeReport, GradeItem, Severity
+from unittest.mock import patch
 
+from core.schema import GradeItem, GradeReport, Severity
 from pipeline.pipeline import run_pipeline
+
 
 class FakeLLMClient:
     def __init__(self):

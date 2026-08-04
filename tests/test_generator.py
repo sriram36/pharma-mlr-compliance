@@ -1,9 +1,12 @@
-import pytest
 from unittest.mock import MagicMock
-from pipeline.generator import generate
+
+import pytest
+
+from core.regulatory import AudienceInfo, MarketInfo
 from core.schema import CampaignBrief, Channel, EmailType
+from pipeline.generator import generate
 from pipeline.grader import GradingContext
-from core.regulatory import MarketInfo, AudienceInfo
+
 
 @pytest.fixture
 def mock_llm_client():
@@ -25,9 +28,9 @@ def test_draft_generator(mock_llm_client):
         audience_info=AudienceInfo(audience_text="HCPs", is_hcp=True, known=True, source="keyword"),
         tokens={"company": "TestCo", "primary": "#000", "secondary": "#fff", "ae_report_line": "Call AE", "pi_link_placeholder": "PI here"}
     )
-    
+
     result = generate(brief, mock_llm_client, ctx)
-    
+
     assert result == "<html>Test Draft</html>"
     mock_llm_client.complete.assert_called_once()
 

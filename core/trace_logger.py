@@ -12,8 +12,8 @@ guessing.
 from __future__ import annotations
 
 import json
-import time
 import threading
+import time
 from pathlib import Path
 
 from core.utils import redact_text

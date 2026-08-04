@@ -39,12 +39,14 @@ Env vars (all required, no optional alternates):
 
 from __future__ import annotations
 
-from core.config import settings
-from core.logger import get_logger
-from core.exceptions import GenerationError
 import re
+
 import openai
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+
+from core.config import settings
+from core.exceptions import GenerationError
+from core.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -62,7 +64,7 @@ class LLMClient:
     def __init__(self):
         self.provider = "azure"
         self.last_usage = None
-        
+
         endpoint = settings.azure_openai_endpoint
         api_key = settings.azure_openai_api_key
 
@@ -145,6 +147,6 @@ class LLMClient:
         if reasoning:
             usage_dict["reasoning_tokens"] = reasoning
         self.last_usage = usage_dict
-        
+
         logger.info(f"LLM Call successful. Tokens: {usage_dict}")
         return content

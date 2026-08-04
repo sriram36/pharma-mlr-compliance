@@ -1,9 +1,9 @@
-import pytest
 from bs4 import BeautifulSoup
-from core.schema import CampaignBrief, ContentClassification, Severity
 
-from pipeline.grader import rule_hcp_audience_tag, rule_regulatory_footer_tag, GradingContext
-from core.regulatory import MarketInfo, AudienceInfo
+from core.regulatory import AudienceInfo, MarketInfo
+from core.schema import CampaignBrief, ContentClassification, Severity
+from pipeline.grader import GradingContext, rule_hcp_audience_tag, rule_regulatory_footer_tag
+
 
 def test_word_boundary_regression():
     # Market="US" should NOT be satisfied by body text containing "focuses" or "discusses"

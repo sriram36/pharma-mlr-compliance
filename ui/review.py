@@ -9,17 +9,12 @@ for generated campaign drafts.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from datetime import datetime
-from typing import Optional, Dict, Any, List
+from pathlib import Path
+from typing import Any, Dict
 
 import streamlit as st
 import streamlit.components.v1 as components
-
-from core.schema import CampaignBrief, Channel, EmailType, ContentClassification, Severity
-from pipeline.pipeline_langgraph import build_graph
-from ui.dashboard import highlight_flagged_claims, render_status_card
-from ui.history import load_draft_history
 
 
 def update_draft_status(
@@ -113,7 +108,7 @@ def render_review_panel():
 
     with right_col:
         st.markdown("#### 📋 Regulatory Audit & Metadata")
-        
+
         # Meta chips
         st.markdown(
             f"""
@@ -154,7 +149,7 @@ def render_review_panel():
                     st.error("Reviewer name is required for formal compliance sign-off.")
                 else:
                     new_st = "Approved" if decision == "Approve for Production" else ("Rejected" if decision == "Reject with Feedback" else "Under Revision")
-                    updated = update_draft_status(selected_json_path, new_st, reviewer_name, review_comment)
+                    update_draft_status(selected_json_path, new_st, reviewer_name, review_comment)
                     st.success(f"Audit decision recorded: **{new_st}** by {reviewer_name}")
                     st.rerun()
 

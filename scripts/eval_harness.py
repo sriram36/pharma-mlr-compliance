@@ -15,36 +15,28 @@ Usage:
 
 from __future__ import annotations
 
-import os
+import argparse
 import sys
 import time
-import json
-import argparse
 from dataclasses import dataclass, field
-from pathlib import Path
 from datetime import datetime
-from typing import List, Dict, Any
-from unittest.mock import MagicMock
+from pathlib import Path
+from typing import Dict, List
 
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from core.brand_config import BRAND_TOKENS
+from core.regulatory import resolve_audience, resolve_market
 from core.schema import (
     CampaignBrief,
     Channel,
-    EmailType,
     ContentClassification,
-    PipelineResult,
-    GradeReport,
-    GradeItem,
+    EmailType,
     Severity,
-    SoftReviewNote,
 )
-from core.brand_config import BRAND_TOKENS
+from pipeline.grader import GradingContext, grade
 from pipeline.pipeline_langgraph import run_pipeline_langgraph
-from pipeline.grader import grade, GradingContext
-from core.regulatory import resolve_market, resolve_audience
-
 
 BENCHMARK_SCENARIOS = [
     {
@@ -213,7 +205,7 @@ def generate_synthetic_mock_html(brief: CampaignBrief, iteration: int = 1) -> st
     ae_box = f'<div style="border: 2px solid black; padding: 10px; margin: 10px 0;"><p>Adverse events: {ae_line}</p></div>'
     tag_str = market_info.tags[0] if market_info.tags else "ABPI"
     footer_tag = f'<p class="reg-code">Complies with {market_info.body_name} ({tag_str}) Code of Practice. [CL ID — PENDING]</p>'
-    
+
     # Market-specific reminders
     extra_market_tag = ""
     if any(t in market_info.tags for t in ("ABPI", "EFPIA")):
@@ -224,7 +216,7 @@ def generate_synthetic_mock_html(brief: CampaignBrief, iteration: int = 1) -> st
     # HCP audience tag
     alias = market_info.aliases[0] if market_info.aliases else brief.market.lower()
     hcp_tag = f'<div class="hcp-tag">This material is intended for {alias} healthcare professionals only.</div>' if audience_info.is_hcp else ""
-    
+
     unsub = '<p><a href="#">Unsubscribe</a></p>' if brief.channel == Channel.EMAIL else ""
     contact = '<p>For medical enquiries email: medinfo@example.com</p>'
     logo_alt = f"{brand_name} logo" if is_branded else "Corporate logo"
@@ -254,10 +246,10 @@ def generate_synthetic_mock_html(brief: CampaignBrief, iteration: int = 1) -> st
 
 def run_benchmark(live: bool = False) -> List[ScenarioResult]:
     results = []
-    print(f"\n=======================================================")
+    print("\n=======================================================")
     print(f"🚀 Running MLR Eval Harness ({'LIVE AZURE LLM' if live else 'DETERMINISTIC EVAL'})")
-    print(f"Suite: 10 Standardized Regulatory Scenarios")
-    print(f"=======================================================\n")
+    print("Suite: 10 Standardized Regulatory Scenarios")
+    print("=======================================================\n")
 
     for scen in BENCHMARK_SCENARIOS:
         scen_id = scen["id"]
@@ -330,7 +322,7 @@ def format_markdown_report(results: List[ScenarioResult], is_live: bool) -> str:
         "",
         f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}  ",
         f"**Execution Mode:** {'Live Azure OpenAI Reasoning Pipeline' if is_live else 'Deterministic Regulatory Grading Engine'}  ",
-        f"**Benchmark Dataset:** 10 Multi-Region Pharmaceutical Campaign Scenarios  ",
+        "**Benchmark Dataset:** 10 Multi-Region Pharmaceutical Campaign Scenarios  ",
         "",
         "## Summary Metrics",
         "",

@@ -1,6 +1,9 @@
 import base64
+
 import streamlit as st
-from core.schema import CampaignBrief, Channel, EmailType, ContentClassification
+
+from core.schema import CampaignBrief, Channel, ContentClassification, EmailType
+
 
 def render_sidebar() -> tuple[CampaignBrief | None, bool]:
     with st.sidebar:
@@ -41,5 +44,5 @@ def render_sidebar() -> tuple[CampaignBrief | None, bool]:
             uploaded_images=image_map
         )
         return brief, run_soft
-        
+
     return None, False

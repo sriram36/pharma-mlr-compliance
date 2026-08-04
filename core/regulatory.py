@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from pydantic import BaseModel
+
 from core.utils import strip_code_fences
 
 MARKET_MAP = {

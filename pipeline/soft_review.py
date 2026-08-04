@@ -28,7 +28,6 @@ from typing import Any
 from core.schema import CampaignBrief, SoftReviewNote
 from core.utils import strip_code_fences
 
-
 _SOFT_REVIEW_SYSTEM = """You are doing a SECOND-PASS advisory read of pharma marketing draft \
 copy, after it has already passed structural compliance checks (AE box, watermark, audience \
 tag, etc. — don't re-check any of that). You're looking ONLY for subjective concerns a \

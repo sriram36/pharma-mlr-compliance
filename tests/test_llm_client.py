@@ -1,5 +1,6 @@
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 from core.llm_client import _is_reasoning_model
 
@@ -7,7 +8,7 @@ from core.llm_client import _is_reasoning_model
 @pytest.fixture
 def mock_llm_client():
     """Create an LLMClient with a mocked underlying OpenAI client.
-    
+
     Settings are loaded from .env at module level by config.py,
     so we construct LLMClient normally and then swap out the internal client.
     """

@@ -4,8 +4,9 @@ helpers that were previously duplicated across each test file.
 """
 
 import pytest
+
+from core.regulatory import AudienceInfo, MarketInfo
 from core.schema import CampaignBrief, ContentClassification
-from core.regulatory import MarketInfo, AudienceInfo
 from pipeline.grader import GradingContext
 
 

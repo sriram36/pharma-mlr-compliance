@@ -1,27 +1,37 @@
-import json
 import asyncio
-import time
 import enum
-from typing import Optional
-from pathlib import Path
-from datetime import datetime
-from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
-from fastapi.responses import StreamingResponse, HTMLResponse
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+import json
+import time
 from contextlib import asynccontextmanager
+from datetime import datetime
+from pathlib import Path
+from typing import Optional
+
+from dateutil import parser as date_parser
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
 
 from core.brand_config import BRAND_TOKENS
-from core.schema import CampaignBrief, Channel, EmailType, ContentClassification, Severity, ImageMap
-from core.llm_client import LLMClient
 from core.config import settings
+from core.llm_client import LLMClient
 from core.logger import get_logger
-from pipeline.pipeline_langgraph import build_graph
+from core.schema import (
+    CampaignBrief,
+    Channel,
+    ContentClassification,
+    EmailType,
+    ImageMap,
+    PipelineResult,
+    Severity,
+)
+from pipeline.pipeline_langgraph import build_graph, run_pipeline_langgraph
 from ui.dashboard import highlight_flagged_claims
 
 logger = get_logger(__name__)
@@ -32,7 +42,7 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("==================================================")
-    logger.info(f"🚀 Starting MLR Pipeline API v0.2.0")
+    logger.info("🚀 Starting MLR Pipeline API v0.2.0")
     logger.info(f"Loaded brand tokens for: {', '.join(BRAND_TOKENS.keys())}")
     logger.info("Application startup complete. Rate limiting active. Waiting for requests...")
     logger.info("==================================================")
@@ -99,8 +109,6 @@ class ReviseRequest(BaseModel):
 
 
 # --- Shared helpers ---
-
-from dateutil import parser as date_parser
 
 
 def custom_encoder(obj):
@@ -342,8 +350,6 @@ async def get_analytics():
         "by_brand": by_brand,
     }
 
-
-from pipeline.pipeline_langgraph import build_graph, run_pipeline_langgraph
 
 class WebhookCampaignPayload(BaseModel):
     channel: Channel = Channel.EMAIL

@@ -1,6 +1,9 @@
 import re
+
 import streamlit as st
+
 from core.schema import Severity
+
 
 def highlight_flagged_claims(html: str, report) -> str:
     highlighted = html

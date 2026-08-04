@@ -15,25 +15,21 @@ Features:
 5. JSON sidecar metadata persistence for comprehensive audit trails.
 """
 
-import time
-import base64
-import json
-import re
 import textwrap
+import time
 from datetime import datetime
 from pathlib import Path
 
-import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
-from core.schema import Severity
-from ui.sidebar import render_sidebar
-from ui.dashboard import highlight_flagged_claims, render_verification_diff, render_status_card
-from ui.history import save_draft_metadata, load_draft_history, render_recent_drafts
-from ui.review import render_review_panel
 from core.llm_client import LLMClient
+from core.schema import Severity
 from pipeline.pipeline_langgraph import build_graph
+from ui.dashboard import highlight_flagged_claims, render_status_card, render_verification_diff
+from ui.history import render_recent_drafts, save_draft_metadata
+from ui.review import render_review_panel
+from ui.sidebar import render_sidebar
 
 st.set_page_config(
     page_title="Pharma MLR Compliance & Drafting Suite",

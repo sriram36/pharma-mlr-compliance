@@ -27,7 +27,9 @@ Graph shape:
 """
 
 from __future__ import annotations
+
 import sys
+
 # Guard: Streamlit may replace sys.stdout with a custom object that
 # lacks .encoding or .reconfigure(). Only reconfigure real terminal stdout.
 if (hasattr(sys.stdout, 'encoding')
@@ -36,21 +38,24 @@ if (hasattr(sys.stdout, 'encoding')
         and hasattr(sys.stdout, 'reconfigure')):
     sys.stdout.reconfigure(encoding='utf-8')
 
-from typing import Optional, TypedDict, Any
-from langgraph.graph import StateGraph, END
-from core.logger import get_logger
-from core.exceptions import GenerationError, PipelineError
+import os
+from typing import Any, Optional, TypedDict
+
+from langgraph.graph import END, StateGraph
+
 from core.brand_config import get_brand_tokens
-from core.schema import CampaignBrief, PipelineResult, GradeReport, SoftReviewNote, Severity
+from core.exceptions import GenerationError, PipelineError
 from core.llm_client import LLMClient
-from core.regulatory import resolve_market, resolve_audience, MarketInfo, AudienceInfo
+from core.logger import get_logger
+from core.regulatory import AudienceInfo, MarketInfo, resolve_audience, resolve_market
+from core.schema import CampaignBrief, GradeReport, PipelineResult, Severity, SoftReviewNote
+from core.trace_logger import log_iteration, log_resolution
+from pipeline.generator import generate as gen_generate
+from pipeline.generator import revise as gen_revise
 from pipeline.grader import GradingContext
-from pipeline.generator import generate as gen_generate, revise as gen_revise
 from pipeline.grader import grade as gen_grade
 from pipeline.soft_review import soft_review as gen_soft_review
-from core.trace_logger import log_iteration, log_resolution
 
-import os
 MAX_ITERATIONS = int(os.getenv("MAX_ITERATIONS", "3"))
 
 class PipelineState(TypedDict, total=False):
@@ -80,10 +85,10 @@ def node_resolve(state: PipelineState) -> dict:
     audience_info = resolve_audience(brief.audience, client=client)
     log_resolution(brief, market_info, audience_info)
     ctx = GradingContext(tokens=get_brand_tokens(brief.brand), market_info=market_info, audience_info=audience_info, client=client)
-    
+
     logger.info(f"[Resolve] Market '{brief.market}' -> {market_info.body_name} (Source: {market_info.source})")
     logger.info(f"[Resolve] Audience '{brief.audience}' -> HCP={audience_info.is_hcp} (Source: {audience_info.source})")
-    
+
     return {"market_info": market_info, "audience_info": audience_info, "ctx": ctx}
 
 
@@ -100,7 +105,7 @@ def node_generate(state: PipelineState) -> dict:
         if not isinstance(e, PipelineError):
             raise GenerationError(f"Draft generation failed: {e}") from e
         raise
-    
+
     logger.info(f"[Generate] Draft generated successfully ({len(html)} bytes)")
     return {"html": html, "iteration": iteration}
 
@@ -130,14 +135,14 @@ def node_soft_review(state: PipelineState) -> dict:
     if not state.get("run_soft_review", True) or not state["grade_report"].all_passed:
         logger.info("[Soft Review] Skipped (either disabled or blocking rules failed)")
         return {"soft_review_notes": []}
-    
+
     logger.info("[Soft Review] Running subjective LLM advisory review...")
     notes = gen_soft_review(state["html"], state["brief"], state["client"])
-    
+
     logger.info(f"[Soft Review] Generated {len(notes)} advisory notes")
     for n in notes:
         logger.info(f"  - {n.concern}: {n.detail}")
-        
+
     return {"soft_review_notes": notes}
 
 

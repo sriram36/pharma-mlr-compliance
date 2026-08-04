@@ -9,9 +9,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 
-from core.schema import CampaignBrief, GradeReport
-from core.regulatory import market_addendum
 from core.llm_client import LLMClient
+from core.regulatory import market_addendum
+from core.schema import CampaignBrief, GradeReport
 from core.utils import strip_code_fences
 from pipeline.grader import GradingContext
 
@@ -70,13 +70,13 @@ def generate(brief: CampaignBrief, client: LLMClient, ctx: GradingContext) -> st
 
 def revise(brief: CampaignBrief, previous_html: str, grade_report: Optional[GradeReport], client: LLMClient, ctx: GradingContext, human_feedback: Optional[str] = None) -> str:
     tokens = ctx.tokens
-    
+
     feedback_section = ""
     if grade_report and grade_report.failed_items:
         failed = grade_report.failed_items
         failure_list = "\n".join(f"- [{i.rule_id}] {i.label}: {i.detail}" for i in failed)
         feedback_section += f"\nFAILED CHECKS:\n{failure_list}\n\nPatch ONLY what's needed to fix the failed checks above."
-    
+
     if human_feedback:
         feedback_section += f"\nHUMAN REVIEWER FEEDBACK:\n{human_feedback}\n\nPrioritize these human changes while maintaining all previous brand rules."
 

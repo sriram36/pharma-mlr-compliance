@@ -23,13 +23,13 @@ advisory only, never a verified finding.
 from __future__ import annotations
 
 from core.brand_config import get_brand_tokens
-from pipeline.generator import generate, revise
-from pipeline.grader import grade, GradingContext
 from core.llm_client import LLMClient
-from core.regulatory import resolve_market, resolve_audience
+from core.regulatory import resolve_audience, resolve_market
 from core.schema import CampaignBrief, PipelineResult, Severity
-from pipeline.soft_review import soft_review
 from core.trace_logger import log_iteration, log_resolution
+from pipeline.generator import generate, revise
+from pipeline.grader import GradingContext, grade
+from pipeline.soft_review import soft_review
 
 MAX_ITERATIONS = 3
 

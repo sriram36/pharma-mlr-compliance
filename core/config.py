@@ -1,13 +1,15 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
 import json
 from typing import List, Union
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     azure_openai_endpoint: str
     azure_openai_api_key: str
     azure_openai_api_version: str = "2024-10-21"
     azure_openai_deployment: str = "gpt-5-mini"
-    
+
     # Defaults for CORS in production
     allow_origins: Union[List[str], str] = ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000"]
 

@@ -1,8 +1,17 @@
-import pytest
+from unittest.mock import patch
+
 from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock
+
 from api import app
-from core.schema import PipelineResult, GradeReport, GradeItem, Severity, Channel, ContentClassification, CampaignBrief
+from core.schema import (
+    CampaignBrief,
+    Channel,
+    ContentClassification,
+    GradeItem,
+    GradeReport,
+    PipelineResult,
+    Severity,
+)
 
 client = TestClient(app)
 

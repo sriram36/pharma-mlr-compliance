@@ -1,7 +1,10 @@
-import pytest
 from unittest.mock import MagicMock
-from pipeline.soft_review import soft_review
+
+import pytest
+
 from core.schema import CampaignBrief, Channel, EmailType
+from pipeline.soft_review import soft_review
+
 
 @pytest.fixture
 def mock_llm_client():
@@ -19,11 +22,11 @@ def test_soft_review_agent(mock_llm_client):
         brand="TestDrug",
         objective="Testing SR"
     )
-    
+
     html_content = "<html>Some draft content</html>"
-    
+
     result = soft_review(html_content, brief, mock_llm_client)
-    
+
     assert len(result) == 1
     assert result[0].concern == "Tone"
     assert result[0].detail == "This looks good, but could be friendlier."

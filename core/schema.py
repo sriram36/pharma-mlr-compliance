@@ -10,11 +10,10 @@ from __future__ import annotations
 
 from enum import Enum
 from typing import Optional
+
 from pydantic import BaseModel, ConfigDict, Field
 
 ImageMap = dict[str, str]
-
-from core.regulatory import resolve_market, is_hcp_audience
 
 
 class Channel(str, Enum):
@@ -71,10 +70,12 @@ class CampaignBrief(BaseModel):
         """Convenience only — dictionary/cache lookup, no LLM fallback (no client
         available here). The pipeline itself resolves market once with LLM fallback
         and threads that through; this method is for quick ad-hoc/test use."""
+        from core.regulatory import resolve_market
         return resolve_market(self.market).body_name
 
     def is_hcp(self) -> bool:
         """Convenience only — same caveat as regulatory_body() above."""
+        from core.regulatory import is_hcp_audience
         return is_hcp_audience(self.audience)
 
 

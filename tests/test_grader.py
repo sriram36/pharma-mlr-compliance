@@ -1,24 +1,23 @@
-import pytest
 from bs4 import BeautifulSoup
-from core.schema import CampaignBrief, ContentClassification, Severity
 
+from core.regulatory import AudienceInfo, MarketInfo
+from core.schema import CampaignBrief
 from pipeline.grader import (
-    rule_draft_watermark,
-    rule_job_code_pending,
-    rule_hcp_audience_tag,
+    GradingContext,
     rule_ae_box,
     rule_brand_leak,
+    rule_contact_info_present,
+    rule_draft_watermark,
+    rule_hcp_audience_tag,
+    rule_image_alt_texts,
+    rule_job_code_pending,
+    rule_logo_present,
+    rule_no_hardcoded_cta_url,
     rule_pi_link_if_branded,
     rule_regulatory_footer_tag,
-    rule_no_hardcoded_cta_url,
-    rule_uploaded_images_used,
     rule_unsubscribe_link,
-    rule_contact_info_present,
-    rule_image_alt_texts,
-    rule_logo_present,
-    GradingContext,
+    rule_uploaded_images_used,
 )
-from core.regulatory import MarketInfo, AudienceInfo
 
 
 def run_rule(rule_func, raw_html: str, brief: CampaignBrief, tokens: dict = None):

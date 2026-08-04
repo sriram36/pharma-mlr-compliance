@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-import pytest
+
 from ui.review import update_draft_status
 
 
