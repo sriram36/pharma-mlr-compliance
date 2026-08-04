@@ -1,10 +1,10 @@
-# Pharma Marketing Draft Pipeline (prototype)
+# Pharma Marketing MLR Compliance & Drafting Suite
 
 ## Architecture Workflow
 
 ```mermaid
 graph TD
-    U[User Input / UI] -->|Campaign Brief| A(FastAPI / LangGraph)
+    U[User Input / Webhook / UI] -->|Campaign Brief| A(FastAPI / LangGraph)
     A --> B{Resolve Market/Audience}
     B -->|Resolved Context| C[Generator LLM]
     C -->|HTML Draft| D[Deterministic Grader]
@@ -12,44 +12,35 @@ graph TD
     D -->|Failed| F{Iterate?}
     F -->|Yes| C
     F -->|No| E
-    E --> G[Final Output & JSON Log]
+    E --> G[Final Output & JSON Audit Log]
+    G --> H[Human MLR Review & Sign-Off Portal]
 ```
-A generate → grade → revise pipeline for pharma email/web marketing
-**drafts**. Built around three of the four loop patterns from
+
+A multi-channel generate → grade → revise pipeline for pharmaceutical marketing
+**drafts** (Email, HCP Landing Pages, Detail Aids/CRM Triggers). Built around all four loop patterns from
 [LangChain's "Art of Loop Engineering"](https://www.langchain.com/blog/the-art-of-loop-engineering):
 
 - **Loop 1 (agent/generator loop)** — `generator.py` turns a structured
-  brief into a full HTML draft.
-- **Loop 2 (verification loop)** — `grader.py` runs 11 deterministic
-  structural checks against the draft; `pipeline.py` feeds failures
-  back into the generator for up to `MAX_ITERATIONS` revision passes.
+  multi-channel brief into a responsive HTML draft.
+- **Loop 2 (verification loop)** — `grader.py` runs deterministic
+  structural and regulatory checks against the draft; `pipeline_langgraph.py` feeds failures
+  back into the generator for iterative revision passes.
   A separate, genuinely agentic layer (`soft_review.py`) handles the
   subjective concerns a deterministic rule structurally cannot — see
   "Deterministic grading vs. the soft-review layer" below.
-- **Loop 4 (hill-climbing loop), lightweight version** —
-  `trace_logger.py` + `analyze_traces.py` log every attempt so you can
-  see which rules the generator trips on most often across many runs,
-  and sharpen `prompts/generator_system.md` against real failure data.
+- **Loop 3 (event-driven trigger loop)** — `api.py` exposes `/api/webhook/campaign`
+  and `/api/generate` backed by sliding-window rate limiting (`slowapi`).
+  External CRM/orchestration events automatically trigger asynchronous generation,
+  evaluating drafts and saving JSON metadata sidecars into the audit archive.
+- **Loop 4 (hill-climbing & evaluation loop)** —
+  `trace_logger.py` + `analyze_traces.py` log rule trip frequencies across runs, while
+  `scripts/eval_harness.py` runs standardized benchmark evaluations across 10 global
+  regulatory scenarios (generating `docs/eval_report.md`).
 
-Loop 3 (event-driven trigger — webhook/cron kicking off a run) isn't
-built yet; `run_pipeline()` in `pipeline.py` is a plain function, so
-wiring it behind a FastAPI endpoint or a queue consumer is a small
-follow-up, not a redesign.
-
-**Decision made: LangGraph (`pipeline_langgraph.py`) is the live version.**
-`app.py` runs on it directly — every request goes through
-`build_graph().stream(...)`, and the UI's step-by-step log is built
-from the graph's own node updates, not manual print statements. Both
-files still exist and both call the exact same underlying functions in
-`generator.py`/`grader.py`/`regulatory.py`/`soft_review.py`, so
-`pipeline.py` stays as a simpler reference implementation (and a
-useful "does the logic itself work, independent of any orchestration
-choice" sanity check) — but it isn't what the app or CLI demo runs on
-anymore. If you want it removed entirely, say so and I'll delete it;
-for now I'm keeping it since it costs nothing to leave in place and
-having a plain-Python version to point at is genuinely useful if
-someone ever asks "walk me through this without the LangGraph
-vocabulary."
+**Live Production Runtime: LangGraph (`pipeline_langgraph.py`) & FastAPI (`api.py`).**
+`app.py` runs on LangGraph directly — every request streams through
+`build_graph().stream(...)`, with full step-by-step progress, diff inspections,
+and a dedicated **Human MLR Review & Sign-Off Portal** (`ui/review.py`).
 
 ## What this is *not*
 
@@ -238,33 +229,43 @@ python pipeline_langgraph.py
 # Same logic, plain-Python reference version
 python pipeline.py
 
-# Full UI — runs on pipeline_langgraph.py directly, soft review is an
-# unchecked-by-default checkbox in the form
-streamlit run app.py
+# Start FastAPI production server with rate limiting & webhook endpoints:
+uvicorn api:app --host 0.0.0.0 --port 8000 --reload
+
+# Run the complete PyTest automated test suite:
+pytest tests -v
+
+# Run the 10-scenario Regulatory Evaluation Benchmark:
+python scripts/eval_harness.py --output docs/eval_report.md
 
 # After you've run a few briefs through it:
 python analyze_traces.py
 ```
 
-## File map
+## File Map
 
 | File / Directory | Role |
 |---|---|
-| `core/schema.py` | `CampaignBrief`, `GradeItem`, `GradeReport`, `PipelineResult`, `SoftReviewNote` — the data contracts |
+| `core/schema.py` | `CampaignBrief`, `GradeItem`, `GradeReport`, `PipelineResult`, `SoftReviewNote` — data contracts |
 | `core/config.py` | Centralized application configuration utilizing `pydantic-settings` |
 | `core/logger.py` | Structured application logging configuration |
 | `core/exceptions.py` | Custom error types like `GenerationError` for control flow |
 | `core/regulatory.py` | Free-text market/audience resolution: dictionary → disk cache → LLM fallback |
 | `core/llm_client.py` | Azure OpenAI client only — handles reasoning-model params |
-| `pipeline/generator.py` | Brief → HTML, plus revision mode |
-| `pipeline/grader.py` | 11 deterministic structural rules + `GradingContext`, `BeautifulSoup`-based |
+| `pipeline/generator.py` | Brief → HTML, plus iterative revision mode |
+| `pipeline/grader.py` | 16 deterministic structural rules + `GradingContext`, `BeautifulSoup`-based |
 | `pipeline/soft_review.py` | Optional 1-call LLM advisory pass for subjective concerns |
 | `pipeline/pipeline_langgraph.py` | Orchestrates resolve → generate → grade → revise → soft-review via `StateGraph` |
-| `api.py` | FastAPI backend to run generation requests asynchronously |
-| `app.py` | Streamlit UI — orchestrates `ui/` modules and runs on `pipeline_langgraph.py` |
-| `ui/` | Modular Streamlit UI components (`sidebar.py`, `dashboard.py`, `history.py`) |
-| `docs/architecture.md` | Detailed architectural descriptions for the Generator, Grader, and Regulatory Engine |
-| `prompts/generator_system.md` | The Generator's system prompt |
+| `api.py` | FastAPI backend with rate limiting (`slowapi`), `/api/generate`, and Loop 3 `/api/webhook/campaign` |
+| `app.py` | Streamlit multi-tab workspace (Drafting, Human MLR Review, Archive) |
+| `ui/review.py` | Human-in-the-Loop MLR Review & Sign-Off portal |
+| `ui/sidebar.py` | Multi-channel brief configurator |
+| `ui/dashboard.py` | Status cards, inline claim highlighter, and verification diff renderer |
+| `ui/history.py` | Metadata sidecar persistence and recent drafts audit table |
+| `scripts/eval_harness.py` | 10-scenario multi-region regulatory compliance evaluation suite |
+| `docs/eval_report.md` | Generated compliance benchmark report & pass-rate matrix |
+| `docs/architecture.md` | Detailed architectural descriptions for Generator, Grader, and Engine |
+| `prompts/generator_system.md` | The Generator's multi-channel system prompt |
 
 ## Validated against your uploaded templates
 
