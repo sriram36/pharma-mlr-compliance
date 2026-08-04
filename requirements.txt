@@ -1,0 +1,13 @@
+pydantic>=2.7
+pydantic-settings>=2.0
+beautifulsoup4>=4.12
+streamlit>=1.40
+openai>=1.57      # AzureOpenAI client + reasoning-model params (max_completion_tokens, reasoning_effort)
+langgraph>=0.3    # LangGraph orchestration (pipeline_langgraph.py, the version app.py actually runs on)
+python-dotenv>=1.0  # .env loading in llm_client.py
+fastapi>=0.110    # REST API endpoint (api.py)
+uvicorn>=0.29     # ASGI server for the FastAPI endpoint
+tenacity>=8.4
+python-dateutil>=2.8  # Date parsing for draft history sorting in api.py
+pandas>=2.0       # DataFrame rendering in Streamlit app.py history table
+slowapi>=0.1.10   # API Rate limiting and DoS prevention

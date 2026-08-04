@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MLR Draft Pipeline</title>
+    <link rel="stylesheet" href="/static/styles.css?v=14">
+</head>
+<body>
+    <div class="navbar">
+        <span>🧬</span>
+        <span>MLR Pipeline Operations</span>
+        <span style="margin-left:auto; font-size:0.75rem; font-weight:400; color:var(--text-muted); background:var(--bg-color); padding:0.25rem 0.6rem; border-radius:999px; border:1px solid var(--border-color);">v2.0 · FastAPI</span>
+    </div>
+
+    <div class="container">
+        <!-- Sidebar Configuration -->
+        <aside class="sidebar">
+            <h3>Configuration</h3>
+            <form id="configForm">
+                <label>Channel
+                    <select id="channel" name="channel">
+                        <option value="email">Email</option>
+                        <option value="web">Web</option>
+                    </select>
+                </label>
+                
+                <label id="emailTypeLabel">Email Type
+                    <select id="email_type" name="email_type">
+                        <option value="mass">Mass</option>
+                        <option value="1:1">1:1</option>
+                    </select>
+                </label>
+
+                <label>Market
+                    <input type="text" id="market" name="market" value="UK" required>
+                </label>
+
+                <label>Audience
+                    <input type="text" id="audience" name="audience" value="HCP" required>
+                </label>
+
+                <label>Classification
+                    <select id="classification" name="classification">
+                        <option value="branded" selected>Branded</option>
+                        <option value="unbranded">Unbranded Disease Awareness</option>
+                    </select>
+                </label>
+
+                <label id="brandLabelWrapper">Brand
+                    <input type="text" id="brand" name="brand" value="Dovato" required>
+                </label>
+
+                <hr style="border:none; border-top:1px solid var(--border-color); margin: 0.5rem 0 1.25rem;">
+
+                <label>Objective
+                    <textarea id="objective" name="objective" rows="3" required>Pre-launch HIV treatment awareness</textarea>
+                </label>
+
+                <label>Upload images (optional)
+                    <input type="file" id="images" name="images" multiple accept="image/png, image/jpeg, image/jpg, image/gif">
+                </label>
+
+                <label style="display:flex; align-items:center; gap:0.5rem; font-weight:normal;">
+                    <input type="checkbox" id="run_soft_review" name="run_soft_review" checked style="width:auto;margin:0;">
+                    Run Soft Review (AI)
+                </label>
+
+                <button type="submit" id="generateBtn">Run Generation</button>
+            </form>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="card">
+                <h3>Verification Pipeline</h3>
+                <div class="log-console" id="logConsole">
+                    <div id="logPlaceholder" style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted); font-style:italic;">
+                        System idle. Configure a campaign and click "Run Generation" to begin.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="resultsCard" style="display: none;">
+                <div id="metricsBar" style="display:flex; gap:1rem; margin-bottom:1.5rem;">
+                    <!-- Populated by JS -->
+                </div>
+            
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="preview">Live Preview</button>
+                    <button class="tab-btn" data-tab="audit">Audit & Grades</button>
+                    <button class="tab-btn" data-tab="history">Iteration History</button>
+                    <button class="tab-btn" data-tab="code">Raw HTML</button>
+                    <span style="flex:1"></span>
+                    <a id="downloadBtn" class="btn-sm btn-primary" style="display:none; text-decoration:none;">📥 Download</a>
+                    <button id="copyBtn" class="btn-sm btn-ghost" style="display:none;">📋 Copy</button>
+                </div>
+
+                <div id="preview" class="tab-content active">
+                    <iframe id="previewFrame" style="width:100%; height:600px; border:1px solid var(--border-color); border-radius:4px; background-color: #ffffff;"></iframe>
+                </div>
+
+                <div id="audit" class="tab-content">
+                    <div id="auditEmpty" style="text-align:center; padding:2rem; color:var(--text-muted); font-style:italic;">Run a generation to see the compliance audit.</div>
+                    <div id="auditBody" style="display:none;">
+                        <div id="complianceProgress" style="margin-bottom:1.5rem;"></div>
+                        <div id="auditGroups"></div>
+                        <div id="softReviewSection"></div>
+                    </div>
+                </div>
+
+                <div id="history" class="tab-content">
+                    <div class="table-responsive">
+                        <table id="iterHistoryTable">
+                            <thead>
+                                <tr>
+                                    <th>Attempt</th>
+                                    <th>Pass</th>
+                                    <th>Fail</th>
+                                    <th>Warn</th>
+                                    <th>Changes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="code" class="tab-content">
+                    <pre style="background:#f6f8fa; padding:1rem; border-radius:4px; overflow-x:auto;"><code id="rawCodeBlock"></code></pre>
+                </div>
+                
+                <div id="draftActions" style="display:none; padding-top: 1rem; border-top: 1px solid var(--border-color); margin-top: 1rem;">
+                    <div style="display:flex; flex-wrap:wrap; gap: 1rem; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; flex: 1; min-width: 250px; max-width: 600px; gap: 0.5rem; align-items: center;">
+                            <input type="text" id="humanFeedback" placeholder="Ask AI to modify this draft..." style="flex: 1; padding: 0.5rem 0.75rem; margin: 0; min-height: 40px; border: 1px solid var(--border-color); border-radius: 4px; outline: none; width: auto;">
+                            <button id="reviseBtn" class="btn-primary" style="padding: 0.5rem 1rem; margin: 0; min-height: 40px; font-size: 0.9rem; border-radius: 4px; white-space: nowrap; width: auto;">Revise</button>
+                        </div>
+                        <div id="reviewButtonsContainer" style="display:flex; gap: 0.5rem; align-items: center;">
+                            <span id="reviewStatusText" style="display: none; margin-right: 1rem; font-weight: 600;"></span>
+                            <button id="approveBtn" class="btn-primary" style="background-color: #10b981; border-color: #10b981; white-space: nowrap; padding: 0.5rem 1.5rem;">Approve</button>
+                            <button id="rejectBtn" class="btn-primary" style="background-color: #ef4444; border-color: #ef4444; white-space: nowrap; padding: 0.5rem 1.5rem;">Reject</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card" id="analyticsCard" style="display: none; margin-bottom: 1.5rem;">
+                <h3>Pipeline Analytics</h3>
+                <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 1rem;" id="analyticsContent">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Recent Drafts</h3>
+                <div class="table-responsive">
+                    <table id="historyTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Channel</th>
+                                <th>Type</th>
+                                <th>Market</th>
+                                <th>Audience</th>
+                                <th style="max-width: 200px;">Objective</th>
+                                <th>Compliance</th>
+                                <th>Status</th>
+                                <th>Iterations</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- History rows -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="historyPagination" style="display:flex; justify-content:center; align-items:center; gap:0.5rem; margin-top:1.25rem;">
+                    <!-- JS will inject buttons here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/app.js?v=16"></script>
+</body>
+</html>

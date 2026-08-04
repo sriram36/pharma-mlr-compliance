@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Loop 2 — Live Verification Demo</title>
+<style>
+  :root{
+    --paper:#F7F5EF; --paper-line:#E4E0D4; --ink:#1B1F2A; --ink-soft:#5B5F6B;
+    --pass:#1E7145; --pass-bg:#E8F3EC; --fail:#A6362A; --fail-bg:#FBEAE7;
+    --warn:#9A6B12; --warn-bg:#FBF1DC; --live:#9A6B12; --rule:#D8D2C0;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:28px 24px 60px;}
+  .wrap{max-width:1140px;margin:0 auto;}
+  header{border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:22px;}
+  .eyebrow{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--live);display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--live);animation:pulse 1.6s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  h1{font-family:Georgia,"Times New Roman",serif;font-size:26px;font-weight:600;margin:0 0 6px;}
+  .sub{color:var(--ink-soft);font-size:13.5px;max-width:700px;line-height:1.5;}
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:24px;}
+  @media (max-width:860px){.grid{grid-template-columns:1fr;}}
+  .panel{background:#fff;border:1px solid var(--paper-line);}
+  .panel-head{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);padding:10px 14px;border-bottom:1px solid var(--paper-line);display:flex;justify-content:space-between;}
+  .panel-body{padding:16px;}
+  label{display:block;font-size:11.5px;color:var(--ink-soft);margin:14px 0 4px;font-weight:600;}
+  label:first-child{margin-top:0;}
+  .hint{font-size:10.5px;color:#8A8E99;font-weight:400;margin-top:3px;line-height:1.4;}
+  input[type=text],textarea{width:100%;padding:8px 9px;border:1px solid var(--rule);background:var(--paper);font-family:inherit;font-size:13.5px;color:var(--ink);border-radius:2px;}
+  textarea{resize:vertical;min-height:56px;}
+  .toggle{display:flex;border:1px solid var(--rule);border-radius:2px;overflow:hidden;}
+  .toggle button{flex:1;padding:8px;border:none;background:var(--paper);font-size:12.5px;cursor:pointer;font-family:inherit;color:var(--ink-soft);}
+  .toggle button.active{background:var(--ink);color:var(--paper);font-weight:600;}
+  #runBtn{margin-top:18px;width:100%;padding:11px;background:var(--ink);color:var(--paper);border:none;font-size:13.5px;font-weight:600;cursor:pointer;letter-spacing:.02em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+  #runBtn:disabled{opacity:.45;cursor:default;}
+  #runBtn:not(:disabled):hover{background:#333;}
+  .stepper{display:flex;flex-wrap:wrap;gap:6px;padding:12px 14px;border-bottom:1px solid var(--paper-line);}
+  .step{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:10.5px;padding:4px 8px;border-radius:10px;background:var(--paper);color:var(--ink-soft);border:1px solid var(--paper-line);}
+  .step.active{background:var(--warn-bg);color:var(--warn);border-color:var(--warn);}
+  .step.done{background:var(--pass-bg);color:var(--pass);border-color:var(--pass);}
+  .log{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.85;max-height:320px;overflow-y:auto;padding:14px;background:var(--ink);color:#DCE3E0;}
+  .log .row{display:flex;gap:10px;}
+  .log .t{color:#6B7280;flex-shrink:0;}
+  .log .pass{color:#7CD9A0;} .log .fail{color:#F0938A;} .log .info{color:#B8C4D9;} .log .warn{color:#E8C572;} .log .sub2{color:#6B7280;padding-left:24px;}
+  .checklist{padding:14px 16px;}
+  .item{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--paper-line);font-size:13px;}
+  .item:last-child{border-bottom:none;}
+  .badge{flex-shrink:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:10px;font-weight:700;padding:2px 6px;border-radius:2px;margin-top:1px;}
+  .badge.pass{background:var(--pass-bg);color:var(--pass);} .badge.fail{background:var(--fail-bg);color:var(--fail);} .badge.warn{background:var(--warn-bg);color:var(--warn);}
+  .item-label{font-weight:600;} .item-sev{font-weight:400;color:var(--ink-soft);font-size:11px;}
+  .item-detail{color:var(--ink-soft);font-size:12px;margin-top:2px;}
+  .preview-frame{width:100%;height:480px;border:none;background:#fff;}
+  .empty{padding:40px 16px;text-align:center;color:var(--ink-soft);font-size:13px;}
+  summary{cursor:pointer;font-size:11.5px;color:var(--ink-soft);padding:8px 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;border-top:1px solid var(--paper-line);}
+  pre{margin:0;padding:12px 14px;font-size:10.5px;background:#FAFAF7;overflow-x:auto;max-height:260px;border-top:1px solid var(--paper-line);white-space:pre-wrap;word-break:break-word;}
+  .verdict{padding:12px 16px;font-size:12.5px;font-weight:600;border-top:2px solid var(--ink);}
+  .verdict.ok{color:var(--pass);} .verdict.no{color:var(--fail);}
+  .kv{font-size:11px;color:var(--ink-soft);padding:8px 14px;border-top:1px solid var(--paper-line);display:flex;flex-wrap:wrap;gap:x14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+  .kv span{margin-right:16px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow"><span class="dot"></span> live — calls the real anthropic api from your browser</div>
+    <h1>Loop 2: Verification Loop — Live Run</h1>
+    <div class="sub">Every "Calling generator…" line is a real <code>fetch()</code> to api.anthropic.com — check devtools → Network. The grader is the browser port of <code>grader.py</code> / <code>regulatory.py</code>: same 11 rules (9 structural + 2 market-specific), same word-boundary market/audience resolution, running client-side against the live DOM.</div>
+  </header>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-head">Campaign brief</div>
+      <div class="panel-body">
+        <label>Market <span class="hint">— free text</span></label>
+        <input type="text" id="market" list="marketSuggestions" value="UK">
+        <datalist id="marketSuggestions"><option value="UK"><option value="US"><option value="EU"><option value="Swiss"></datalist>
+        <div class="hint">Recognized (word-boundary matched): UK/United Kingdom, US/USA/America, EU/Europe, Swiss/Switzerland. Anything else still runs — the regulatory-code check just becomes a warning instead of a hard pass/fail.</div>
+
+        <label>Audience <span class="hint">— free text</span></label>
+        <input type="text" id="audience" list="audienceSuggestions" value="HCP">
+        <datalist id="audienceSuggestions"><option value="HCP"><option value="Patients"><option value="Prescribing nurses"><option value="Payers"></datalist>
+        <div class="hint">Anything containing hcp/doctor/physician/clinician/nurse/prescriber triggers the HCP-only line requirement.</div>
+
+        <label>Brand <span class="hint">— free text</span></label>
+        <input type="text" id="brand" list="brandSuggestions" value="Dovato">
+        <datalist id="brandSuggestions"><option value="Dovato"><option value="Nucala"><option value="Trelegy"><option value="Shingrix"></datalist>
+        <div class="hint">Known tokens (color + AE line): Dovato, Nucala, Trelegy, Shingrix. Unrecognized brands fall back to explicit "[TBC]" placeholder tokens rather than guessing real values.</div>
+
+        <label>Classification</label>
+        <div class="toggle" id="classToggle">
+          <button data-val="unbranded" class="active">Unbranded (disease awareness)</button>
+          <button data-val="branded">Branded</button>
+        </div>
+
+        <label>Objective</label>
+        <textarea id="objective">Pre-launch HIV treatment awareness</textarea>
+
+        <button id="runBtn" onclick="runLoop()">Run live loop →</button>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="panel">
+        <div class="panel-head">Pipeline steps<span id="elapsed"></span></div>
+        <div class="stepper" id="stepper">
+          <span class="step" data-step="resolve">1 · resolve tokens</span>
+          <span class="step" data-step="gen1">2 · generate (attempt 1)</span>
+          <span class="step" data-step="grade1">3 · grade (11 rules)</span>
+          <span class="step" data-step="revise">4 · revise (if needed)</span>
+          <span class="step" data-step="verdict">5 · final verdict</span>
+        </div>
+        <div class="log" id="log"><div class="row"><span class="t">[idle]</span><span class="info">waiting for you to hit run…</span></div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">Audit trail (deterministic — no LLM involved in grading)</div>
+        <div id="checklist" class="empty">No run yet.</div>
+        <div id="verdict"></div>
+      </div>
+
+      <div class="panel" id="previewPanel" style="display:none;">
+        <div class="panel-head">Rendered draft (final iteration)</div>
+        <iframe class="preview-frame" id="previewFrame"></iframe>
+        <div class="kv" id="usageKv"></div>
+        <details><summary>Raw HTML</summary><pre id="rawHtml"></pre></details>
+        <details><summary>Full system + user prompt sent on final call</summary><pre id="rawPrompt"></pre></details>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- ported from brand_config.py ----
+const BRAND_TOKENS = {
+  Dovato:   { company:"ViiV Healthcare, a company of GSK", primary:"#D4007A",
+              ae_uk:"Adverse events should be reported. Report via www.mhra.gov.uk/yellowcard.",
+              ae_us:"Report adverse events to FDA MedWatch at 1-800-FDA-1088 or www.fda.gov/medwatch.", known:true },
+  Nucala:   { company:"GSK", primary:"#C8102E",
+              ae_uk:"Adverse events should be reported. Report via www.mhra.gov.uk/yellowcard.",
+              ae_us:"Report adverse events to FDA MedWatch at 1-800-FDA-1088 or www.fda.gov/medwatch.", known:true },
+  Trelegy:  { company:"GSK", primary:"#5B2C6F",
+              ae_uk:"Adverse events should be reported. Report via www.mhra.gov.uk/yellowcard.",
+              ae_us:"Report adverse events to FDA MedWatch at 1-800-FDA-1088 or www.fda.gov/medwatch.", known:true },
+  Shingrix: { company:"GSK", primary:"#E87722",
+              ae_uk:"Adverse events should be reported. Report via www.mhra.gov.uk/yellowcard.",
+              ae_us:"Report adverse events to FDA MedWatch at 1-800-FDA-1088 or www.fda.gov/medwatch.", known:true },
+};
+function getBrandTokens(brand){
+  const hit = Object.keys(BRAND_TOKENS).find(k => k.toLowerCase() === brand.trim().toLowerCase());
+  if(hit) return BRAND_TOKENS[hit];
+  return { company:"[SPONSOR COMPANY — TBC]", primary:"#1A1A2E",
+    ae_uk:"[INSERT market-appropriate adverse event reporting line — TBC with local regulatory team]",
+    ae_us:"[INSERT market-appropriate adverse event reporting line — TBC with local regulatory team]", known:false };
+}
+
+// ---- ported from regulatory.py (same word-boundary matching, same alias groups) ----
+const MARKET_MAP = [
+  { keys:["uk","united kingdom","britain","gb","england"], tags:["ABPI"], body:"ABPI Code of Practice",
+    notes:["If newly authorized or under additional monitoring, UK promotional material must display the black triangle (▼) symbol per the MHRA's Black Triangle Scheme — confirm current status with regulatory."] },
+  { keys:["us","usa","united states","america"], tags:["FDA","OPDP"], body:"FDA / OPDP",
+    notes:["If this product carries an FDA Boxed Warning, it must be prominently displayed, not just linked — confirm with regulatory.",
+           "US permits direct-to-consumer promotion (unlike UK/EU) but requires the same fair-balance standard."] },
+  { keys:["eu","europe","european union"], tags:["EFPIA"], body:"EFPIA Code",
+    notes:["If newly authorized or under additional monitoring, EU promotional material must display the black triangle (▼) symbol per EMA rules — confirm current status with regulatory.",
+           "Most EU member states prohibit direct-to-consumer prescription drug advertising — confirm this is HCP-directed."] },
+  { keys:["swiss","switzerland"], tags:["Swissmedic","Pharma Code"], body:"Swissmedic / Pharma Code",
+    notes:["Switzerland is not an EU member — Swissmedic rules apply, not EMA/EFPIA."] },
+];
+function marketAddendum(marketText){
+  const info = resolveMarket(marketText);
+  const lines = [`Applicable regulatory code: ${info.body}.`];
+  (info.notes||[]).forEach(n => lines.push(`- ${n}`));
+  if(!info.known) lines.push(`- Do not guess a specific code — write "[CONFIRM APPLICABLE LOCAL CODE]" instead.`);
+  return lines.join('\n');
+}
+function wordBoundaryHas(text, needle){
+  return new RegExp(`\\b${needle.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\b`, 'i').test(text);
+}
+function resolveMarket(marketText){
+  const m = (marketText||'').trim().toLowerCase();
+  for(const group of MARKET_MAP){
+    if(group.keys.some(k => k===m || wordBoundaryHas(m, k))){
+      return { tags:group.tags, body:group.body, known:true, aliases:group.keys, notes:group.notes||[] };
+    }
+  }
+  return { tags:[], body:`[UNRECOGNIZED MARKET: '${marketText}' — confirm applicable code manually]`, known:false, aliases:[m], notes:[] };
+}
+const HCP_KEYWORDS = ["hcp","healthcare professional","doctor","physician","clinician","nurse","prescriber"];
+function isHcpAudience(audienceText){
+  const a = (audienceText||'').trim().toLowerCase();
+  return HCP_KEYWORDS.some(k => a.includes(k));
+}
+
+const RULE_LABELS = {
+  watermark: "DRAFT watermark present", job_code: "Job code placeholder present",
+  audience_tag: "HCP-only audience statement", ae_box: "AE reporting box (bordered, correct wording)",
+  brand_leak: "No product name in unbranded body copy", pi_link: "Prescribing Information link placeholder",
+  reg_footer: "Regulatory code referenced in footer", cta_url: "CTA links are placeholders, not real URLs",
+  logo_placeholder: "Logo is a labeled placeholder, not embedded",
+  black_triangle: "Black triangle / additional-monitoring reminder (UK/EU)",
+  boxed_warning: "Boxed Warning reminder (US)",
+};
+
+let iterCount = 0, startTime = 0, elapsedTimer = null;
+
+function log(msg, cls){
+  const el = document.getElementById('log');
+  const row = document.createElement('div');
+  row.className = 'row';
+  const t = new Date().toLocaleTimeString('en-US',{hour12:false});
+  row.innerHTML = `<span class="t">[${t}]</span><span class="${cls||'info'}">${msg}</span>`;
+  el.appendChild(row);
+  el.scrollTop = el.scrollHeight;
+}
+function setStep(id, state){
+  const el = document.querySelector(`.step[data-step="${id}"]`);
+  if(!el) return;
+  el.classList.remove('active','done');
+  if(state) el.classList.add(state);
+}
+function resetSteps(){
+  ['resolve','gen1','grade1','revise','verdict'].forEach(s=>setStep(s,null));
+}
+function tickElapsed(){
+  document.getElementById('elapsed').textContent = ` — ${((Date.now()-startTime)/1000).toFixed(1)}s elapsed`;
+}
+
+function buildSystemPrompt(brief, tokens, aeLine){
+  return `You are a pharma marketing DRAFT generator working under a HARD 1000-token output cap.
+If you run out of room, whatever you haven't written yet gets silently cut off — so you MUST
+write in the exact order below, most important first, so a cutoff only ever loses low-priority
+decoration, never a required compliance element. Return ONLY raw HTML, no markdown fences, no
+preamble, no explanation before or after the HTML.
+
+WRITE IN THIS EXACT ORDER — do not write body copy or styling before every item in Part A exists:
+
+PART A — compliance-critical, write this FIRST, keep it terse (plain text, minimal markup):
+1. A single top div containing, on separate short lines: the exact text "DRAFT" and "Not
+   approved for distribution"; the exact text "[CL ID — PENDING]"; and the regulatory code named
+   in the user message's compliance notes (e.g. "ABPI" or "FDA").
+2. If the user message's compliance notes mention a black-triangle/additional-monitoring or
+   Boxed Warning requirement, one short line for it here (▼ symbol + "subject to additional
+   monitoring", or "[BOXED WARNING — CONFIRM WITH REGULATORY IF APPLICABLE]"). Skip entirely if
+   the notes don't mention it — don't invent one for a market that doesn't need it.
+3. If audience is HCP-like: one line stating this is for the given market's healthcare
+   professionals only (must contain the words "healthcare professional" and a recognizable form
+   of the market name).
+4. The AE box: a <div style="border: 2px solid #999; padding:6px;"> containing the AE reporting
+   line from the user message VERBATIM, nothing paraphrased.
+5. If classification is "branded": the exact phrase "Prescribing Information" as a placeholder
+   link (href="#").
+
+PART B — write this only after every Part A item is done, and keep it SHORT (aim for under 60
+words total, one short headline + 2-3 sentences of body copy, one CTA link href="#"):
+6. A short headline + short body paragraph about the objective. If unbranded, never name the
+   product — you may name the sponsor company once (e.g. "Supported by [company]"). If branded,
+   you may use the product name freely here.
+   Any specific statistic/trial result must be marked "[PENDING VERIFICATION]", never stated as
+   settled fact.
+7. One placeholder CTA link, href="#".
+8. A text logo placeholder like "[LOGO PLACEHOLDER — brand name]" — never an <img> tag.
+
+STYLE BUDGET — you have almost no room for decoration. Use at most: one border (the AE box,
+already specified above) and one color reference using the accent color given in the user
+message. No gradients, no box-shadows, no multiple fonts, no repeated inline styling per
+element. Plain text and simple <div>/<p> tags for everything else.
+
+Wrap everything in one outer <div class="email-content">. Nothing needs a separate
+class="annotation-wrap" section in this compact mode — Part A already carries every check.`;
+}
+function buildUserPrompt(brief, tokens, aeLine){
+  return `Brief:
+- Market: ${brief.market}
+- Audience: ${brief.audience}
+- Brand: ${brief.brand} (${tokens.company})
+- Objective: ${brief.objective}
+- Classification: ${brief.classification}
+- Primary color to use for accents: ${tokens.primary}
+
+Market-specific compliance notes (vary by market — apply only what's relevant here):
+${marketAddendum(brief.market)}
+
+AE reporting line to embed verbatim: "${aeLine}"
+
+Return only the HTML.`;
+}
+function buildRevisionPrompt(previousHtml, failedItems, aeLine, wasTruncated){
+  const list = failedItems.map(i => `- [${i.rule_id}] ${RULE_LABELS[i.rule_id]}: ${i.detail}`).join('\n');
+  if(wasTruncated){
+    // The previous attempt hit the 1000-token cap before finishing — it's incomplete, possibly
+    // mid-tag. Asking the model to "patch" broken/truncated HTML just reproduces the same
+    // length problem and hits the same wall again. Don't send it back at all: start clean,
+    // and lean harder on the ordering instruction that caused the problem in the first place.
+    return `Your previous attempt was CUT OFF by the 1000-token output limit before finishing —` +
+      ` it never got past this content:\n\n${previousHtml.slice(0, 400)}...\n[TRUNCATED]\n\n` +
+      `That's why these checks failed (they're written LATE in your priority order, past where ` +
+      `you ran out of room):\n${list}\n\n` +
+      `Do NOT try to continue or complete that draft. Start over. Write Part A (the compliance ` +
+      `block) FIRST and keep it terse — that's what got cut off last time. Keep Part B (headline ` +
+      `+ body copy) to well under 40 words this time, shorter than the system prompt's own ` +
+      `suggestion, specifically to guarantee everything fits. ` +
+      `AE line verbatim: "${aeLine}"\nReturn only the HTML.`;
+  }
+  return `The previous draft finished within budget but FAILED these checks:\n${list}\n\n` +
+    `PREVIOUS DRAFT:\n${previousHtml}\n\n` +
+    `Patch ONLY what's needed to fix the failed checks above — keep everything else unchanged.\n` +
+    `Reminder — AE line to embed verbatim: "${aeLine}"\nReturn only the corrected full HTML.`;
+}
+
+async function callClaude(system, user){
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6", max_tokens: 1000,
+      system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
+      messages:[{role:"user", content:user}]
+    })
+  });
+  if(!resp.ok){ throw new Error(`API returned ${resp.status}: ${(await resp.text()).slice(0,200)}`); }
+  const data = await resp.json();
+  return { text: data.content.filter(b=>b.type==='text').map(b=>b.text).join('\n'), usage: data.usage, stop_reason: data.stop_reason };
+}
+function cacheNote(usage){
+  if(usage.cache_read_input_tokens) return ` — cache HIT: ${usage.cache_read_input_tokens} tokens read at ~10% cost`;
+  if(usage.cache_creation_input_tokens) return ` — cache WRITE: ${usage.cache_creation_input_tokens} tokens (one-time 1.25x)`;
+  return '';
+}
+function extractHtml(raw){
+  let t = raw.trim();
+  if(t.startsWith('```')){
+    const lines = t.split('\n'); lines.shift();
+    if(lines[lines.length-1].trim().startsWith('```')) lines.pop();
+    t = lines.join('\n').trim();
+  }
+  return t;
+}
+function visibleBodyText(doc){
+  let body = doc.querySelector('.email-content') || doc.body;
+  const clone = body.cloneNode(true);
+  clone.querySelectorAll('.annotation-wrap').forEach(n=>n.remove());
+  return clone.textContent.replace(/\s+/g,' ').trim();
+}
+
+function gradeDraft(html, brief, aeLine){
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const bodyText = visibleBodyText(doc);
+  const results = [];
+
+  const hasWatermark = html.includes('DRAFT') && html.includes('Not approved for distribution');
+  results.push({ rule_id:'watermark', passed:hasWatermark, severity:'blocking',
+    detail: hasWatermark ? 'Watermark found.' : 'Missing DRAFT / not-approved-for-distribution watermark.' });
+
+  const hasJobCode = html.includes('[CL ID');
+  results.push({ rule_id:'job_code', passed:hasJobCode, severity:'blocking',
+    detail: hasJobCode ? 'Job code placeholder found.' : 'No [CL ID — PENDING] placeholder.' });
+
+  const hcp = isHcpAudience(brief.audience);
+  const marketInfo = resolveMarket(brief.market);
+  if(hcp){
+    const lower = bodyText.toLowerCase();
+    let ok = lower.includes('healthcare professional');
+    if(marketInfo.known) ok = ok && marketInfo.aliases.some(a => wordBoundaryHas(lower, a));
+    results.push({ rule_id:'audience_tag', passed:ok, severity:'blocking',
+      detail: ok ? 'HCP-only line found.' : `Body copy doesn't clearly state this is for ${brief.market} healthcare professionals only.` });
+  } else {
+    results.push({ rule_id:'audience_tag', passed:true, severity:'warning', detail:`Not required — '${brief.audience}' wasn't recognized as HCP.` });
+  }
+
+  const hasBorder = /border\s*:\s*2px solid/i.test(html);
+  const hasAeText = /adverse event/i.test(html);
+  const lineMatches = html.includes(aeLine.slice(0,25));
+  const aeOk = hasBorder && hasAeText && lineMatches;
+  results.push({ rule_id:'ae_box', passed:aeOk, severity:'blocking',
+    detail: aeOk ? 'Bordered AE box with correct line present.' :
+      `Missing: ${!hasBorder?'visible border; ':''}${!hasAeText?'adverse event text; ':''}${!lineMatches?'exact required wording':''}` });
+
+  if(brief.classification === 'unbranded'){
+    const ok = !wordBoundaryHas(bodyText, brief.brand);
+    results.push({ rule_id:'brand_leak', passed:ok, severity:'blocking',
+      detail: ok ? 'Product name absent from visible body copy.' : `"${brief.brand}" appears in visible body copy.` });
+  } else {
+    results.push({ rule_id:'brand_leak', passed:true, severity:'warning', detail:'Not applicable — content is branded.' });
+  }
+
+  if(brief.classification === 'branded'){
+    const ok = html.includes('Prescribing Information');
+    results.push({ rule_id:'pi_link', passed:ok, severity:'blocking',
+      detail: ok ? 'PI placeholder present.' : 'Branded content missing Prescribing Information placeholder.' });
+  } else {
+    results.push({ rule_id:'pi_link', passed:true, severity:'warning', detail:'Not applicable — content is unbranded.' });
+  }
+
+  if(!marketInfo.known){
+    results.push({ rule_id:'reg_footer', passed:false, severity:'warning',
+      detail:`Market '${brief.market}' isn't in the resolver's known list (UK/US/EU/Swiss) — confirm the applicable code manually.` });
+  } else {
+    const regOk = marketInfo.tags.some(tag => html.includes(tag));
+    results.push({ rule_id:'reg_footer', passed:regOk, severity:'blocking',
+      detail: regOk ? `${marketInfo.tags[0]} reference found.` : `No ${marketInfo.tags.join('/')} reference in footer.` });
+  }
+
+  const links = Array.from(doc.querySelectorAll('a')).map(a=>a.getAttribute('href')||'');
+  const badLinks = links.filter(h => h && h !== '#' && !h.startsWith('#'));
+  results.push({ rule_id:'cta_url', passed:badLinks.length===0, severity:'blocking',
+    detail: badLinks.length===0 ? 'All CTAs are placeholders.' : `Found real-looking URL(s): ${badLinks.slice(0,2).join(', ')}` });
+
+  const imgs = Array.from(doc.querySelectorAll('img'));
+  const realLogos = imgs.filter(i => (i.className||'').toLowerCase().includes('logo') && i.getAttribute('src'));
+  results.push({ rule_id:'logo_placeholder', passed:realLogos.length===0, severity:'blocking',
+    detail: realLogos.length===0 ? 'No embedded logo image.' : 'A real <img> is being used for a logo slot.' });
+
+  // Market-specific rules — the real answer to "EU rules differ from US," not just a swapped tag.
+  // Always non-blocking: the tool can't verify a product's actual monitoring/Boxed-Warning status.
+  if(marketInfo.known && (marketInfo.tags.includes('ABPI') || marketInfo.tags.includes('EFPIA'))){
+    const mentioned = html.includes('▼') || /additional monitoring/i.test(html);
+    results.push({ rule_id:'black_triangle', passed:mentioned, severity:'warning',
+      detail: mentioned ? 'Draft references additional-monitoring status.' :
+        `UK/EU draft for '${brief.brand}' doesn't mention additional-monitoring status — confirm with regulatory.` });
+  } else {
+    results.push({ rule_id:'black_triangle', passed:true, severity:'warning', detail:'Not applicable — market isn\'t UK/EU.' });
+  }
+  if(marketInfo.known && marketInfo.tags.includes('FDA')){
+    const mentioned = /boxed warning/i.test(html);
+    results.push({ rule_id:'boxed_warning', passed:mentioned, severity:'warning',
+      detail: mentioned ? 'Draft references Boxed Warning status.' :
+        `US draft for '${brief.brand}' doesn't mention Boxed Warning status — confirm with regulatory.` });
+  } else {
+    results.push({ rule_id:'boxed_warning', passed:true, severity:'warning', detail:'Not applicable — market isn\'t US.' });
+  }
+
+  return results;
+}
+
+function renderChecklist(items){
+  const el = document.getElementById('checklist');
+  el.className = '';
+  el.innerHTML = items.map(i => `
+    <div class="item">
+      <span class="badge ${i.passed?'pass':(i.severity==='warning'?'warn':'fail')}">${i.passed?'PASS':(i.severity==='warning'?'WARN':'FAIL')}</span>
+      <div>
+        <div class="item-label">${RULE_LABELS[i.rule_id]} <span class="item-sev">(${i.severity})</span></div>
+        <div class="item-detail">${i.detail}</div>
+      </div>
+    </div>`).join('');
+  const blockingFailed = items.filter(i=>!i.passed && i.severity==='blocking');
+  const warnings = items.filter(i=>!i.passed && i.severity==='warning');
+  const allBlockingPassed = blockingFailed.length === 0;
+  let msg = allBlockingPassed
+    ? '✓ All blocking checks passed. Still requires human MLR review before any real use.'
+    : `✗ ${blockingFailed.length} blocking check(s) still failing.`;
+  if(warnings.length) msg += ` (${warnings.length} non-blocking warning(s) — see items above.)`;
+  document.getElementById('verdict').innerHTML = `<div class="verdict ${allBlockingPassed?'ok':'no'}">${msg}</div>`;
+  return allBlockingPassed;
+}
+
+document.getElementById('classToggle').addEventListener('click', e=>{
+  if(e.target.tagName !== 'BUTTON') return;
+  document.querySelectorAll('#classToggle button').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+});
+
+async function runLoop(){
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true;
+  document.getElementById('log').innerHTML = '';
+  document.getElementById('previewPanel').style.display = 'none';
+  resetSteps();
+  iterCount = 0;
+  startTime = Date.now();
+  elapsedTimer = setInterval(tickElapsed, 200);
+
+  const brief = {
+    market: document.getElementById('market').value.trim() || 'UK',
+    audience: document.getElementById('audience').value.trim() || 'HCP',
+    brand: document.getElementById('brand').value.trim() || 'Dovato',
+    classification: document.querySelector('#classToggle button.active').dataset.val,
+    objective: document.getElementById('objective').value.trim(),
+  };
+
+  try {
+    setStep('resolve','active');
+    log(`Brief: market="${brief.market}", audience="${brief.audience}", brand="${brief.brand}", classification="${brief.classification}"`, 'info');
+
+    const tokens = getBrandTokens(brief.brand);
+    log(`→ Brand token lookup: "${brief.brand}" → ${tokens.known ? 'KNOWN token set (real color/company/AE-line placeholders)' : 'UNKNOWN — falling back to [TBC] placeholder tokens'}`, tokens.known?'pass':'warn');
+
+    const marketInfo = resolveMarket(brief.market);
+    log(`→ Market resolution: "${brief.market}" → ${marketInfo.known ? `matched aliases [${marketInfo.aliases.join(', ')}] → ${marketInfo.body}` : 'UNRECOGNIZED — reg_footer check will be a non-blocking warning'}`, marketInfo.known?'pass':'warn');
+
+    const hcp = isHcpAudience(brief.audience);
+    log(`→ Audience resolution: "${brief.audience}" → ${hcp ? 'matched HCP keyword — audience_tag check is BLOCKING' : 'no HCP keyword matched — audience_tag check is non-blocking'}`, hcp?'pass':'info');
+
+    const aeLine = marketInfo.known && marketInfo.tags.includes('FDA') ? tokens.ae_us : tokens.ae_uk;
+    setStep('resolve','done');
+
+    const system = buildSystemPrompt(brief, tokens, aeLine);
+    const userPrompt = buildUserPrompt(brief, tokens, aeLine);
+    log(`→ System prompt built: ${system.length} chars. User prompt: ${userPrompt.length} chars.`, 'sub2');
+
+    setStep('gen1','active');
+    log(`→ [Step 2] Calling generator (attempt 1) — real POST to api.anthropic.com…`, 'info');
+    let t0 = Date.now();
+    let res = await callClaude(system, userPrompt);
+    log(`✓ Response in ${((Date.now()-t0)/1000).toFixed(1)}s — ${res.usage.input_tokens} in / ${res.usage.output_tokens} out tokens${cacheNote(res.usage)}, stop_reason: ${res.stop_reason}`, 'pass');
+    if(res.stop_reason === 'max_tokens') log(`⚠ Output was CUT OFF at the 1000-token cap — anything after this point in the model's response never arrived.`, 'warn');
+    let html = extractHtml(res.text);
+    let lastUsage = res.usage, lastPrompt = { system, user: userPrompt };
+    iterCount = 1;
+    setStep('gen1','done');
+
+    setStep('grade1','active');
+    log(`→ [Step 3] Grading 11 rules (deterministic, no LLM, runs in ~0ms)…`, 'info');
+    let results = gradeDraft(html, brief, aeLine);
+    results.forEach(r => log(`&nbsp;&nbsp;${r.passed?'✓':(r.severity==='warning'?'⚠':'✗')} [${r.rule_id}] ${RULE_LABELS[r.rule_id]} — ${r.detail}`, r.passed?'pass':(r.severity==='warning'?'warn':'fail')));
+    setStep('grade1','done');
+
+    let prevFailedIds = null;
+    while(!results.every(r=>r.passed) && iterCount < 3){
+      const blockingFailed = results.filter(r=>!r.passed && r.severity==='blocking');
+      if(blockingFailed.length === 0){ log('→ Only non-blocking warnings remain — not worth burning another revision call.', 'info'); break; }
+
+      // Stuck detector: if the exact same rules failed last iteration too, another identical
+      // attempt is very unlikely to fix it and just burns tokens repeating the same mistake —
+      // stop and say so plainly instead of silently retrying a 3rd time.
+      const currentFailedIds = blockingFailed.map(r=>r.rule_id).sort().join(',');
+      if(prevFailedIds !== null && currentFailedIds === prevFailedIds){
+        log(`→ Same ${blockingFailed.length} check(s) failed two attempts in a row (${currentFailedIds}) — stopping instead of burning a 3rd identical call. This usually means the system prompt needs a fix, not another retry.`, 'warn');
+        break;
+      }
+      prevFailedIds = currentFailedIds;
+
+      setStep('revise','active');
+      iterCount++;
+      const wasTruncated = res.stop_reason === 'max_tokens';
+      log(`→ [Step 4] ${blockingFailed.length} blocking check(s) failed — calling generator again (attempt ${iterCount}), ${wasTruncated ? 'restarting fresh since the last attempt was truncated' : 'patching only the specific failures'}…`, 'info');
+      const revisionPrompt = buildRevisionPrompt(html, blockingFailed, aeLine, wasTruncated);
+      t0 = Date.now();
+      res = await callClaude(system, revisionPrompt);
+      log(`✓ Revision in ${((Date.now()-t0)/1000).toFixed(1)}s — ${res.usage.input_tokens} in / ${res.usage.output_tokens} out tokens${cacheNote(res.usage)}`, 'pass');
+      if(res.stop_reason === 'max_tokens') log(`⚠ Revision was ALSO cut off at the 1000-token cap.`, 'warn');
+      html = extractHtml(res.text);
+      lastUsage = res.usage; lastPrompt = { system, user: revisionPrompt };
+      log(`→ Re-grading…`, 'info');
+      results = gradeDraft(html, brief, aeLine);
+      results.forEach(r => log(`&nbsp;&nbsp;${r.passed?'✓':(r.severity==='warning'?'⚠':'✗')} [${r.rule_id}] ${RULE_LABELS[r.rule_id]} — ${r.detail}`, r.passed?'pass':(r.severity==='warning'?'warn':'fail')));
+    }
+    setStep('revise','done');
+    setStep('verdict','active');
+
+    log(`Done — ${iterCount} iteration(s), ${((Date.now()-startTime)/1000).toFixed(1)}s total.`, 'info');
+    const allOk = renderChecklist(results);
+    setStep('verdict', allOk ? 'done' : null);
+
+    document.getElementById('previewPanel').style.display = 'block';
+    document.getElementById('previewFrame').srcdoc = html;
+    document.getElementById('usageKv').innerHTML =
+      `<span>iterations: ${iterCount}</span><span>final call tokens: ${lastUsage.input_tokens} in / ${lastUsage.output_tokens} out</span><span>cache: ${lastUsage.cache_read_input_tokens ? lastUsage.cache_read_input_tokens+' read (90% off)' : (lastUsage.cache_creation_input_tokens ? lastUsage.cache_creation_input_tokens+' written' : 'n/a')}</span><span>stop_reason: ${res.stop_reason}</span>`;
+    document.getElementById('rawHtml').textContent = html;
+    document.getElementById('rawPrompt').textContent = `SYSTEM:\n${lastPrompt.system}\n\nUSER:\n${lastPrompt.user}`;
+
+  } catch(err){
+    log(`✗ Error: ${err.message}`, 'fail');
+    document.getElementById('checklist').innerHTML = `<div class="empty">Run failed: ${err.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    clearInterval(elapsedTimer);
+  }
+}
+</script>
+</body>
+</html>

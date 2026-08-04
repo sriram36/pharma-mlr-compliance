@@ -1,0 +1,185 @@
+/* ═══════════════════════════════════════════════
+   Premium Dark-Mode & Glassmorphism CSS for Streamlit
+   ═══════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    --bg-primary: #09090b;
+    --bg-secondary: #18181b;
+    --bg-card: rgba(24, 24, 27, 0.6);
+    --border-subtle: rgba(255, 255, 255, 0.05);
+    --border-hover: rgba(255, 255, 255, 0.15);
+    --text-primary: #fafafa;
+    --text-muted: #a1a1aa;
+    
+    --accent-indigo: #6366f1;
+    --accent-purple: #a855f7;
+    --accent-emerald: #10b981;
+    --accent-rose: #f43f5e;
+    --accent-amber: #f59e0b;
+    --accent-sky: #38bdf8;
+    
+    --gradient-main: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+    --gradient-glow: linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(168,85,247,0.2) 50%, rgba(236,72,153,0.2) 100%);
+}
+
+/* Base Body Adjustments */
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+}
+
+/* ═══════════════════════════════════════════════
+   Animations
+   ═══════════════════════════════════════════════ */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════
+   Hero Header
+   ═══════════════════════════════════════════════ */
+.hero-header {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-subtle);
+    border-radius: 24px;
+    padding: 3rem 2.5rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+    animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
+}
+
+.hero-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 400px;
+    height: 400px;
+    background: var(--gradient-glow);
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.hero-header > * {
+    position: relative;
+    z-index: 1;
+}
+
+.hero-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: var(--gradient-main);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: -0.03em;
+}
+
+.hero-header p {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    margin: 0;
+    line-height: 1.6;
+    max-width: 600px;
+}
+
+/* ═══════════════════════════════════════════════
+   Status Cards (Glassmorphism)
+   ═══════════════════════════════════════════════ */
+.status-card {
+    padding: 1.25rem 1.5rem;
+    border-radius: 16px;
+    margin-bottom: 1rem;
+    background: var(--bg-card);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-subtle);
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+    color: var(--text-primary);
+    animation: fadeIn 0.6s ease-out forwards;
+}
+
+.status-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2), 0 10px 10px -5px rgba(0,0,0,0.1);
+    border-color: var(--border-hover);
+}
+
+.status-card strong {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    letter-spacing: 0.01em;
+}
+
+.status-pass {
+    border-left: 4px solid var(--accent-emerald);
+    background: linear-gradient(90deg, rgba(16,185,129,0.05) 0%, transparent 60%);
+}
+.status-info {
+    border-left: 4px solid var(--accent-sky);
+    background: linear-gradient(90deg, rgba(56,189,248,0.05) 0%, transparent 60%);
+}
+.status-warn {
+    border-left: 4px solid var(--accent-amber);
+    background: linear-gradient(90deg, rgba(245,158,11,0.05) 0%, transparent 60%);
+}
+.status-fail {
+    border-left: 4px solid var(--accent-rose);
+    background: linear-gradient(90deg, rgba(244,63,94,0.05) 0%, transparent 60%);
+}
+
+/* ═══════════════════════════════════════════════
+   Streamlit Overrides (Buttons, Inputs, etc.)
+   ═══════════════════════════════════════════════ */
+div.stButton > button {
+    background: var(--gradient-main) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 0.6rem 1.5rem !important;
+    font-weight: 600 !important;
+    font-family: 'Inter', sans-serif !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 4px 15px rgba(99,102,241,0.3) !important;
+}
+
+div.stButton > button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(99,102,241,0.5) !important;
+    opacity: 0.9 !important;
+}
+
+div.stButton > button:active {
+    transform: translateY(1px) !important;
+    box-shadow: 0 2px 10px rgba(99,102,241,0.2) !important;
+}
+
+/* Highlight Quoted Text */
+.quote-highlight {
+    background-color: rgba(244, 63, 94, 0.15);
+    border-bottom: 2px solid var(--accent-rose);
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+.quote-highlight:hover {
+    background-color: rgba(244, 63, 94, 0.25);
+}

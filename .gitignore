@@ -1,0 +1,46 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+
+# Virtual environment
+.venv/
+
+# Environment variables (NEVER commit secrets)
+.env
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor settings
+.vscode/
+.idea/
+
+# Test & lint caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Build artifacts
+dist/
+build/
+
+# Generated outputs (re-created on every run)
+outputs/
+!outputs/.gitkeep
+
+# Runtime data files (re-created automatically)
+traces.jsonl
+core/resolution_cache.json
+
+# Logs
+*.log
+
+# Uploads
+uploads/
+
+# Mentor reference samples (not source code)
+samples/

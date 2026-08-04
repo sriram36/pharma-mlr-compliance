@@ -1,0 +1,42 @@
+name: CI Test Suite
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-mock slowapi ruff
+
+    - name: Lint with Ruff
+      run: |
+        ruff check .
+
+    - name: Run Pytest Suite
+      env:
+        AZURE_OPENAI_API_KEY: "ci-dummy-key"
+        AZURE_OPENAI_ENDPOINT: "https://ci-test.openai.azure.com"
+        AZURE_OPENAI_API_VERSION: "2025-01-01"
+        AZURE_OPENAI_DEPLOYMENT: "gpt-5-mini"
+      run: |
+        pytest -v

@@ -1,0 +1,50 @@
+[project]
+name = "drug-email-qa"
+version = "0.2.0"
+description = "Pharma marketing draft pipeline — generates compliance-checked HTML email/web mockups with deterministic grading and optional AI advisory review."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.7",
+    "pydantic-settings>=2.0",
+    "beautifulsoup4>=4.12",
+    "streamlit>=1.40",
+    "openai>=1.57",
+    "langgraph>=0.3",
+    "python-dotenv>=1.0",
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "tenacity>=8.4",
+    "python-dateutil>=2.8",
+    "pandas>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-mock>=3.14",
+    "ruff>=0.8.0",
+    "mypy>=1.11",
+]
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["core*", "pipeline*", "scripts*", "prompts*", "ui*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+strict = true
