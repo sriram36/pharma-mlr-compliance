@@ -347,12 +347,12 @@ from pipeline.pipeline_langgraph import build_graph, run_pipeline_langgraph
 
 class WebhookCampaignPayload(BaseModel):
     channel: Channel = Channel.EMAIL
-    email_type: Optional[EmailType] = EmailType.STANDARD
+    email_type: Optional[EmailType] = EmailType.MASS
     market: str
     audience: str
     brand: str
     objective: str
-    classification: ContentClassification = ContentClassification.UNBRANDED
+    classification: ContentClassification = ContentClassification.UNBRANDED_DISEASE_AWARENESS
     run_soft_review: bool = True
     images: ImageMap = {}
     callback_url: Optional[str] = None

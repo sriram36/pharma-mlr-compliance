@@ -2,7 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
 from api import app
-from core.schema import PipelineResult, GradeReport, GradeItem, Severity, Channel, ContentClassification
+from core.schema import PipelineResult, GradeReport, GradeItem, Severity, Channel, ContentClassification, CampaignBrief
 
 client = TestClient(app)
 
@@ -27,14 +27,22 @@ def test_rate_limiter_registered():
     assert app.state.limiter is not None
 
 def test_webhook_campaign_endpoint_mocked(monkeypatch):
+    test_brief = CampaignBrief(
+        channel=Channel.EMAIL,
+        market="UK",
+        audience="HCP",
+        brand="Dovato",
+        objective="Test objective",
+        classification=ContentClassification.UNBRANDED_DISEASE_AWARENESS
+    )
     mock_result = PipelineResult(
-        brief=MagicMock(),
+        brief=test_brief,
         final_html="<html><body>Draft HTML</body></html>",
         grade_report=GradeReport(
             items=[
                 GradeItem(rule_id="test", label="Test Rule", passed=True, severity=Severity.BLOCKING, detail="All clear")
             ],
-            all_passed=True
+            iteration=1,
         ),
         iterations_used=1,
         soft_review_notes=[],
