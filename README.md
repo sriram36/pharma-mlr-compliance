@@ -54,11 +54,13 @@ wording. Treat every checkmark as "ready for a human to review," never
 
 ## Deterministic grading vs. the soft-review layer
 
-All 11 rules in `grader.py` check objective, checkable facts — a
-border exists, a string is present, a name is absent. None of them are
-judgment calls, so none of them cost an LLM call; an LLM re-checking
-"does this border exist" would be strictly worse (slower, costs
-tokens, and can rationalize a near-miss as a pass).
+Fifteen of the sixteen rules in `grader.py` check objective, checkable
+facts — a border exists, a string is present, a name is absent. None of
+those are judgment calls, so none of them cost an LLM call; an LLM
+re-checking "does this border exist" would be strictly worse (slower,
+costs tokens, and can rationalize a near-miss as a pass). The sixteenth,
+`brand_guidelines_llm`, is an optional LLM brand and tone judge; it
+passes as "skipped" when no LLM client is given.
 
 But a real MLR review also asks things no regex can answer: does this
 copy *imply* an efficacy claim without stating one outright? Is "fair
@@ -66,7 +68,7 @@ balance" actually balanced, or just technically present? That's what
 `soft_review.py` is for — ONE LLM call, run only after all blocking
 grader rules already pass, returning advisory notes that are never
 merged into `GradeReport` and never treated as pass/fail. It's the
-genuinely agentic half of loop 2; the 11 structural rules are the
+genuinely agentic half of loop 2; the 15 structural rules are the
 deterministic half. Toggle it off (`run_soft_review=False`) if you
 don't want the extra call — the pipeline works completely fine
 without it.
@@ -253,7 +255,7 @@ python analyze_traces.py
 | `core/regulatory.py` | Free-text market/audience resolution: dictionary → disk cache → LLM fallback |
 | `core/llm_client.py` | Azure OpenAI client only — handles reasoning-model params |
 | `pipeline/generator.py` | Brief → HTML, plus iterative revision mode |
-| `pipeline/grader.py` | 16 deterministic structural rules + `GradingContext`, `BeautifulSoup`-based |
+| `pipeline/grader.py` | 16 rules (15 deterministic structural checks and one optional LLM brand judge) + `GradingContext`, `BeautifulSoup`-based |
 | `pipeline/soft_review.py` | Optional 1-call LLM advisory pass for subjective concerns |
 | `pipeline/pipeline_langgraph.py` | Orchestrates resolve → generate → grade → revise → soft-review via `StateGraph` |
 | `api.py` | FastAPI backend with rate limiting (`slowapi`), `/api/generate`, and Loop 3 `/api/webhook/campaign` |
