@@ -1,7 +1,9 @@
 """
 Grader node for the MLR pipeline.
-Deterministically evaluates generated HTML against structural, brand, and
-compliance rules without making LLM calls.
+Evaluates generated HTML against structural, brand, and compliance rules.
+Fifteen of the sixteen rules are deterministic HTML and text checks with no LLM
+call. The sixteenth, rule_brand_guidelines_llm, is an optional LLM brand and tone
+judge; it passes as "skipped" when no LLM client is given.
 """
 
 from __future__ import annotations
